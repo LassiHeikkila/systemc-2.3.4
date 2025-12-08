@@ -179,6 +179,17 @@ private:
 
         ++num_read;
     }
+
+public:
+    void trace(sc_trace_file *tf, std::string prefix)
+    {
+        tf->trace(read_active, prefix + ".read_active");
+        tf->trace(write_active, prefix + ".write_active");
+        tf->trace(size, prefix + ".size", 32);
+        tf->trace(num_read, prefix + ".num_read", 32);
+        tf->trace(max_used, prefix + ".max_used", 32);
+        tf->trace(num_elements, prefix + ".num_elements", 32);
+    }
 };
 
 class producer : public sc_module
@@ -221,6 +232,11 @@ public:
             wait(1000, SC_NS);
         }
     }
+
+    void trace(sc_trace_file *tf, std::string prefix)
+    {
+        tf->trace(active, prefix + ".active");
+    }
 };
 
 class consumer : public sc_module
@@ -248,6 +264,11 @@ public:
             wait(100, SC_NS);
         }
     }
+
+    void trace(sc_trace_file *tf, std::string prefix)
+    {
+        tf->trace(active, prefix + ".active");
+    }
 };
 
 class top : public sc_module
@@ -264,6 +285,13 @@ public:
     {
         prod_inst.out(fifo_inst);
         cons_inst.in(fifo_inst);
+    }
+
+    void trace(sc_trace_file *tf, std::string prefix)
+    {
+        fifo_inst.trace(tf, prefix + ".fifo");
+        prod_inst.trace(tf, prefix + ".producer");
+        cons_inst.trace(tf, prefix + ".consumer");
     }
 };
 
@@ -284,10 +312,8 @@ int sc_main(int argc, char *argv[])
 
     // VCD Tracing
     sc_trace_file *tf = sc_create_vcd_trace_file("simple_perf_trace");
-    sc_trace(tf, top1.fifo_inst.read_active, "read_active");
-    sc_trace(tf, top1.fifo_inst.write_active, "write_active");
-    sc_trace(tf, top1.cons_inst.active, "consumer_active");
-    sc_trace(tf, top1.prod_inst.active, "producer_active");
+
+    top1.trace(tf, "top");
 
     sc_start();
 
